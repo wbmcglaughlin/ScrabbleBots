@@ -1,3 +1,5 @@
+import random
+from re import T
 from raylibpy import *
 from Modules.Graphics import Dimensions, Render
 
@@ -57,3 +59,36 @@ class Board():
             end_hor   = Vector2(dimensions.side_length + dimensions.posx, i * square_side_length + dimensions.posy)
             draw_line_v(start_hor, end_hor, render.border_color)
 
+class Tile():
+    def __init__(self, type, value) -> None:
+        self.type = type
+        self.value = value
+
+        self.position = None
+
+class TileBag():
+    def __init__(self) -> None:
+        self.tiles = self.fill_bag()
+
+    def fill_bag(self):
+        tiles = []
+
+        alphabet = 'abcdefghijklmnopqrstuvwxyz'
+        tile_value =  [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
+        tile_counts = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1]
+
+        # Sanity Check
+        if len(tile_value) != len(alphabet) and len(tile_counts) != len(alphabet):
+            exit(-1)
+
+        for i, count in enumerate(tile_counts):
+            for _ in range(count):
+                tiles.append(Tile(alphabet[i], tile_value[i]))
+
+        random.shuffle(tiles)
+
+        return tiles
+
+    def print(self):
+        for tile in self.tiles:
+            print((tile.type, tile.value))

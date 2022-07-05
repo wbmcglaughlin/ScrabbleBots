@@ -49,9 +49,16 @@ def main():
                         126, 128]
 
     tile_bag = Scrabble.TileBag()
-    tile_bag.print()
 
     board = Scrabble.Board(side_squares, triple_words, double_words, triple_letters, double_letters)
+
+    player_one = Scrabble.Player()
+    player_two = Scrabble.Player()
+
+    players = [player_one, player_two]
+
+    for player in players:
+        player.get_tiles(tile_bag)
 
     init_window(width, height, "Scrabble Bots")
 
@@ -66,6 +73,11 @@ def main():
 
         draw_fps(5, 5)
         board.draw_board(dimensions, render)
+
+        for player_num, player in enumerate(players):
+            tile_positions = board.get_tile_positions(dimensions, player_num)
+            for i, tile in enumerate(player.tiles):
+                tile.draw_tile(tile_positions[i], dimensions.side_length / side_squares)
 
         end_drawing()
 

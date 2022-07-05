@@ -1,5 +1,4 @@
 import random
-from re import T
 from raylibpy import *
 from Modules.Graphics import Dimensions, Render
 
@@ -59,12 +58,44 @@ class Board():
             end_hor   = Vector2(dimensions.side_length + dimensions.posx, i * square_side_length + dimensions.posy)
             draw_line_v(start_hor, end_hor, render.border_color)
 
+    def get_tile_positions(self, dimensions: Dimensions, player_number):
+        if player_number == 0:
+            top_left_x = dimensions.posx + dimensions.side_length / 2 - dimensions.side_length / 15 * 3.5
+
+            y_offset = 20
+            top_left_y = dimensions.posy - dimensions.side_length / 15 - y_offset
+            
+            tile_positions = []
+            for i in range(7):
+                tile_positions.append(Vector2(top_left_x + i * dimensions.side_length / 15, top_left_y))
+        else:
+            top_left_x = dimensions.posx + dimensions.side_length / 2 - dimensions.side_length / 15 * 3.5
+
+            y_offset = 20
+            top_left_y = dimensions.posy + dimensions.side_length + y_offset
+
+            tile_positions = []
+            for i in range(7):
+                tile_positions.append(Vector2(top_left_x + i * dimensions.side_length / 15, top_left_y))
+
+        return tile_positions
+
 class Tile():
     def __init__(self, type, value) -> None:
         self.type = type
         self.value = value
 
         self.position = None
+
+    def draw_tile(self, position: Vector2, side_length: float):
+        indent = 3
+        indented_pos = Vector2(position.x + indent, position.y + indent)
+
+        draw_rectangle_v(indented_pos, Vector2(side_length - indent, side_length - indent), Color(255, 200, 2347, 255))
+        font_size = side_length / 1.5
+        offset = (side_length - font_size) / 2
+
+        draw_text(self.type, position.x + offset, position.y + offset, font_size, BLACK)
 
 class TileBag():
     def __init__(self) -> None:
@@ -89,6 +120,25 @@ class TileBag():
 
         return tiles
 
+    def get_tile(self):
+        tile: Tile = self.tiles.pop()
+        return tile
+
     def print(self):
         for tile in self.tiles:
             print((tile.type, tile.value))
+
+class Player():
+    def __init__(self) -> None:
+        self.score = 0
+        self.tiles: list[Tile] = []
+    
+    def get_tiles(self, tile_bag: TileBag):
+        tile_max = 7
+
+        while len(self.tiles) < tile_max:
+            self.tiles.append(tile_bag.get_tile())
+
+        print(len(self.tiles))    
+
+

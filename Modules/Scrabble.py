@@ -2,6 +2,68 @@ import random
 from raylibpy import *
 from Modules.Graphics import Dimensions, Render
 
+class Tile():
+    def __init__(self, type, value) -> None:
+        self.type = type
+        self.value = value
+
+        self.position = None
+
+    def draw_tile(self, rec: Rectangle, side_length: float):
+        indent = 3
+
+        draw_rectangle_rec(rec, Color(255, 200, 2347, 255))
+        font_size = side_length / 1.5
+        offset = (side_length - font_size) / 2
+
+        draw_text(self.type, rec.x + offset, rec.y + offset, font_size, BLACK)
+
+class TileBag():
+    def __init__(self) -> None:
+        self.tiles = self.fill_bag()
+
+    def fill_bag(self):
+        tiles = []
+
+        alphabet = 'abcdefghijklmnopqrstuvwxyz'
+        tile_value =  [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
+        tile_counts = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1]
+
+        # Sanity Check
+        if len(tile_value) != len(alphabet) and len(tile_counts) != len(alphabet):
+            exit(-1)
+
+        for i, count in enumerate(tile_counts):
+            for _ in range(count):
+                tiles.append(Tile(alphabet[i], tile_value[i]))
+
+        random.shuffle(tiles)
+
+        return tiles
+
+    def get_tile(self) -> Tile:
+        tile: Tile = self.tiles.pop()
+        return tile
+
+    def print(self):
+        for tile in self.tiles:
+            print((tile.type, tile.value))
+
+class Player():
+    def __init__(self) -> None:
+        self.held_piece = -1
+        self.score = 0
+        self.tiles: list[Tile] = []
+        self.moved_tiles: list[int] = []
+    
+    def get_tiles(self, tile_bag: TileBag):
+        tile_max = 7
+
+        while len(self.tiles) < tile_max:
+            self.tiles.append(tile_bag.get_tile())
+
+        print(len(self.tiles))    
+
 class Board():
     def __init__(self, side_squares: int, triple_words: list[int], double_words: list[int], triple_letters: list[int], double_letters: list[int]) -> None:
         self.side_squares = side_squares
@@ -58,16 +120,26 @@ class Board():
             end_hor   = Vector2(dimensions.side_length + dimensions.posx, i * square_side_length + dimensions.posy)
             draw_line_v(start_hor, end_hor, render.border_color)
 
-    def get_tile_positions(self, dimensions: Dimensions, player_number):
-        if player_number == 0:
+    def draw_player_pieces(self, dimensions: Dimensions, players: list[Player]):
+        for player_num, player in enumerate(players):
+            tile_positions = self.get_tile_positions(dimensions, player_num)
+            for i, tile in enumerate(player.tiles):
+                if tile.position is not None:
+                    tile.draw_tile(tile.position, dimensions.side_length / self.side_squares)
+                elif i not in player.moved_tiles:
+                    tile.draw_tile(tile_positions[i], dimensions.side_length / self.side_squares)
+
+    def get_tile_positions(self, dimensions: Dimensions, player_number) -> list[Rectangle]:
+        if player_number == 1:
             top_left_x = dimensions.posx + dimensions.side_length / 2 - dimensions.side_length / 15 * 3.5
 
             y_offset = 20
             top_left_y = dimensions.posy - dimensions.side_length / 15 - y_offset
-            
+
             tile_positions = []
             for i in range(7):
-                tile_positions.append(Vector2(top_left_x + i * dimensions.side_length / 15, top_left_y))
+                rec = Rectangle(top_left_x + i * dimensions.side_length / 15, top_left_y, dimensions.side_length / 15, dimensions.side_length / 15)
+                tile_positions.append(rec)
         else:
             top_left_x = dimensions.posx + dimensions.side_length / 2 - dimensions.side_length / 15 * 3.5
 
@@ -76,69 +148,11 @@ class Board():
 
             tile_positions = []
             for i in range(7):
-                tile_positions.append(Vector2(top_left_x + i * dimensions.side_length / 15, top_left_y))
+                rec = Rectangle(top_left_x + i * dimensions.side_length / 15, top_left_y, dimensions.side_length / 15, dimensions.side_length / 15)
+                tile_positions.append(rec)
 
         return tile_positions
 
-class Tile():
-    def __init__(self, type, value) -> None:
-        self.type = type
-        self.value = value
 
-        self.position = None
-
-    def draw_tile(self, position: Vector2, side_length: float):
-        indent = 3
-        indented_pos = Vector2(position.x + indent, position.y + indent)
-
-        draw_rectangle_v(indented_pos, Vector2(side_length - indent, side_length - indent), Color(255, 200, 2347, 255))
-        font_size = side_length / 1.5
-        offset = (side_length - font_size) / 2
-
-        draw_text(self.type, position.x + offset, position.y + offset, font_size, BLACK)
-
-class TileBag():
-    def __init__(self) -> None:
-        self.tiles = self.fill_bag()
-
-    def fill_bag(self):
-        tiles = []
-
-        alphabet = 'abcdefghijklmnopqrstuvwxyz'
-        tile_value =  [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
-        tile_counts = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1]
-
-        # Sanity Check
-        if len(tile_value) != len(alphabet) and len(tile_counts) != len(alphabet):
-            exit(-1)
-
-        for i, count in enumerate(tile_counts):
-            for _ in range(count):
-                tiles.append(Tile(alphabet[i], tile_value[i]))
-
-        random.shuffle(tiles)
-
-        return tiles
-
-    def get_tile(self):
-        tile: Tile = self.tiles.pop()
-        return tile
-
-    def print(self):
-        for tile in self.tiles:
-            print((tile.type, tile.value))
-
-class Player():
-    def __init__(self) -> None:
-        self.score = 0
-        self.tiles: list[Tile] = []
-    
-    def get_tiles(self, tile_bag: TileBag):
-        tile_max = 7
-
-        while len(self.tiles) < tile_max:
-            self.tiles.append(tile_bag.get_tile())
-
-        print(len(self.tiles))    
 
 

@@ -1,6 +1,7 @@
 # core_color_select.py
 import os
 import csv
+from re import T
 
 os.environ["RAYLIB_BIN_PATH"] = "__file__"
 
@@ -62,7 +63,11 @@ def main():
 
     init_window(width, height, "Scrabble Bots")
 
-    set_target_fps(60)
+    set_target_fps(120)
+
+    turn = 0
+    selected_tile: Scrabble.Tile = None
+    selected_tile_index: int = None
 
     while not window_should_close():
 
@@ -73,11 +78,29 @@ def main():
 
         draw_fps(5, 5)
         board.draw_board(dimensions, render)
+        board.draw_player_pieces(dimensions, players)
 
-        for player_num, player in enumerate(players):
-            tile_positions = board.get_tile_positions(dimensions, player_num)
-            for i, tile in enumerate(player.tiles):
-                tile.draw_tile(tile_positions[i], dimensions.side_length / side_squares)
+        if is_mouse_button_released(MOUSE_LEFT_BUTTON):
+            for square in board.board_squares:
+                if check_collision_point_rec(mouse_point, square):
+                    selected_tile.position = square
+                elif len(players[turn].moved_tiles) > 0:
+                    players[turn].moved_tiles.remove(selected_tile_index)
+
+            selected_tile = None
+
+        if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
+            tiles = board.get_tile_positions(dimensions, turn)
+            for tile_index, tile in enumerate(tiles):
+                if check_collision_point_rec(mouse_point, tile):
+                    selected_tile = players[turn].tiles[tile_index]
+                    selected_tile_index = tile_index
+                    players[turn].moved_tiles.append(tile_index)
+
+        if is_mouse_button_down(MOUSE_LEFT_BUTTON):
+            if selected_tile is not None:
+                side_length = dimensions.side_length / 15
+                selected_tile.draw_tile(Rectangle(mouse_point.x - side_length / 2, mouse_point.y - side_length / 2, side_length, side_length), side_length)
 
         end_drawing()
 

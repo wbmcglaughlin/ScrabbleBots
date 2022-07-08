@@ -1,13 +1,10 @@
-# core_color_select.py
 import os
-import csv
-from re import T
-from tkinter import N
 
 os.environ["RAYLIB_BIN_PATH"] = "__file__"
 
 from raylibpy import *
 from Modules import Graphics, Scrabble
+
 
 def main():
     # Scrabble Words
@@ -18,37 +15,37 @@ def main():
             words.append(line.removesuffix('\n').lower())
 
     # Dimensions for the board
-    width  = 600
+    width = 600
     height = 800
 
     board_side_dim = height if (width > height) else width
 
-    border     = 20
-    spacing    = (height - board_side_dim) / 2
-    dimensions = Graphics.Dimensions(board_side_dim - 2 * border, border, border + spacing)
+    border = 20
+    spacing = (height - board_side_dim) / 2
+    dimensions = Graphics.Dimensions(board_side_dim - 2 * border, border, int(border + spacing))
 
     # Graphics
-    border_thickness: int      = 3
-    border_color: Color        = BLACK
+    border_thickness: int = 3
+    border_color: Color = BLACK
     square_colors: list[Color] = [RED, Color(255, 200, 2347, 255), BLUE, GRAY]
-    render: Graphics.Render    = Graphics.Render(border_thickness, border_color, square_colors)
+    render: Graphics.Render = Graphics.Render(border_thickness, border_color, square_colors)
 
     # Scrabble board
-    side_squares   = 15
-    triple_words   = [0, 7, 14, 105, 119, 
-                        210, 217, 224]
-    double_words   = [16, 32, 48, 64, 28, 
-                        42, 56, 70, 196, 182, 
-                        168, 154, 208, 192, 176, 
-                        160, 112]
-    triple_letters = [20, 24, 76, 136, 200, 
-                        204, 88, 148, 80, 84, 
-                        140, 144]
-    double_letters = [45, 165, 213, 221, 179, 
-                        59, 36, 52, 38, 102, 
-                        116, 132, 186, 172, 188, 
-                        122, 108, 92, 96, 98, 
-                        126, 128]
+    side_squares = 15
+    triple_words = [0, 7, 14, 105, 119,
+                    210, 217, 224]
+    double_words = [16, 32, 48, 64, 28,
+                    42, 56, 70, 196, 182,
+                    168, 154, 208, 192, 176,
+                    160, 112]
+    triple_letters = [20, 24, 76, 136, 200,
+                      204, 88, 148, 80, 84,
+                      140, 144]
+    double_letters = [45, 165, 213, 221, 179,
+                      59, 36, 52, 38, 102,
+                      116, 132, 186, 172, 188,
+                      122, 108, 92, 96, 98,
+                      126, 128]
 
     tile_bag = Scrabble.TileBag()
 
@@ -68,14 +65,12 @@ def main():
 
     turn = 0
     selected_tile: Scrabble.Tile = None
-    selected_tile_index: int = None
 
     # Complete Turn Button
     complete_turn_button_rect = Rectangle(10, height - 10 - 30, 30, 30)
     complete_turn_button_clicked = False
 
     while not window_should_close():
-
         mouse_point = get_mouse_position()
 
         begin_drawing()
@@ -89,43 +84,40 @@ def main():
         draw_text(f'turn: {turn}', 100, 10, 10, BLACK)
 
         if is_mouse_button_released(MOUSE_LEFT_BUTTON):
-            for square in board.board_squares:
+            for square_index, square in enumerate(board.board_squares):
                 if check_collision_point_rec(mouse_point, square):
                     if selected_tile is not None:
-                        selected_tile.position = square
-                        players[turn].placed_tiles.append(selected_tile)
-                        players[turn].tiles.remove(selected_tile)
-                elif len(players[turn].moved_tiles) > 0:
-                    players[turn].moved_tiles.remove(selected_tile_index)
+                        selected_tile.rack_position = None
+                        selected_tile.board_position = square_index
 
             selected_tile = None
 
             complete_turn_button_clicked = False
 
         if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
-            tiles = board.get_tile_positions(dimensions, turn)
+            tiles = board.get_player_tile_rec(dimensions, turn)
             for tile_index, tile in enumerate(tiles):
                 if check_collision_point_rec(mouse_point, tile):
                     selected_tile = players[turn].tiles[tile_index]
-                    selected_tile_index = tile_index
-                    players[turn].moved_tiles.append(tile_index)
+                    selected_tile.rack_position = None
+
+            if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
+                complete_turn_button_clicked = True
+                for tile in players[turn].tiles:
+                    if tile.board_position is not None:
+                        board.tiles.append(tile)
+                        players[turn].tiles.remove(tile)
+
+                players[turn].get_tiles(tile_bag)
+
+                turn = (turn + 1) % 2
 
         if is_mouse_button_down(MOUSE_LEFT_BUTTON):
             if selected_tile is not None:
                 side_length = dimensions.side_length / 15
-                selected_tile.draw_tile(Rectangle(mouse_point.x - side_length / 2, mouse_point.y - side_length / 2, side_length, side_length), side_length)
-
-            if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
-                complete_turn_button_clicked = True
-                for tile in players[turn].placed_tiles:
-                    board.tiles.append(tile)
-                
-                players[turn].placed_tiles.clear()
-                players[turn].moved_tiles.clear()
-                players[turn].get_tiles(tile_bag)
-                print(len(players[turn].tiles))
-
-                turn = (turn + 1) % 2
+                selected_tile.draw_tile(
+                    Rectangle(mouse_point.x - side_length / 2, mouse_point.y - side_length / 2, side_length,
+                              side_length), side_length)
 
         end_drawing()
 

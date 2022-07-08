@@ -10,9 +10,11 @@ class Tile():
         self.position = None
 
     def draw_tile(self, rec: Rectangle, side_length: float):
-        indent = 3
+        color = Color(227, 204, 32, 255)
+        if self.position != None:
+            color = Color(227, 142, 32, 255)
 
-        draw_rectangle_rec(rec, Color(255, 200, 2347, 255))
+        draw_rectangle_rec(rec, color)
         font_size = side_length / 1.5
         offset = (side_length - font_size) / 2
 
@@ -54,15 +56,16 @@ class Player():
         self.held_piece = -1
         self.score = 0
         self.tiles: list[Tile] = []
+        self.placed_tiles: list[Tile] = []
         self.moved_tiles: list[int] = []
     
     def get_tiles(self, tile_bag: TileBag):
         tile_max = 7
+        if len(self.tiles) == tile_max:
+            print("Tile Bag already full")
 
         while len(self.tiles) < tile_max:
             self.tiles.append(tile_bag.get_tile())
-
-        print(len(self.tiles))    
 
 class Board():
     def __init__(self, side_squares: int, triple_words: list[int], double_words: list[int], triple_letters: list[int], double_letters: list[int]) -> None:
@@ -73,6 +76,7 @@ class Board():
         self.double_letters = double_letters
 
         self.board_squares: list[Rectangle] = []
+        self.tiles: list[Tile] = []
 
     def update_board_squares(self, dimensions: Dimensions):
         self.board_squares.clear()
@@ -120,6 +124,9 @@ class Board():
             end_hor   = Vector2(dimensions.side_length + dimensions.posx, i * square_side_length + dimensions.posy)
             draw_line_v(start_hor, end_hor, render.border_color)
 
+        for tile in self.tiles:
+            tile.draw_tile(tile.position, dimensions.side_length / self.side_squares)
+
     def draw_player_pieces(self, dimensions: Dimensions, players: list[Player]):
         for player_num, player in enumerate(players):
             tile_positions = self.get_tile_positions(dimensions, player_num)
@@ -128,6 +135,10 @@ class Board():
                     tile.draw_tile(tile.position, dimensions.side_length / self.side_squares)
                 elif i not in player.moved_tiles:
                     tile.draw_tile(tile_positions[i], dimensions.side_length / self.side_squares)
+            
+            for i, tile in enumerate(player.placed_tiles):
+                if tile.position is not None:
+                    tile.draw_tile(tile.position, dimensions.side_length / self.side_squares)
 
     def get_tile_positions(self, dimensions: Dimensions, player_number) -> list[Rectangle]:
         if player_number == 1:

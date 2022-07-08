@@ -2,6 +2,7 @@
 import os
 import csv
 from re import T
+from tkinter import N
 
 os.environ["RAYLIB_BIN_PATH"] = "__file__"
 
@@ -69,6 +70,10 @@ def main():
     selected_tile: Scrabble.Tile = None
     selected_tile_index: int = None
 
+    # Complete Turn Button
+    complete_turn_button_rect = Rectangle(10, height - 10 - 30, 30, 30)
+    complete_turn_button_clicked = False
+
     while not window_should_close():
 
         mouse_point = get_mouse_position()
@@ -80,14 +85,22 @@ def main():
         board.draw_board(dimensions, render)
         board.draw_player_pieces(dimensions, players)
 
+        draw_rectangle_rec(complete_turn_button_rect, Color(63, 201, 24, 255))
+        draw_text(f'turn: {turn}', 100, 10, 10, BLACK)
+
         if is_mouse_button_released(MOUSE_LEFT_BUTTON):
             for square in board.board_squares:
                 if check_collision_point_rec(mouse_point, square):
-                    selected_tile.position = square
+                    if selected_tile is not None:
+                        selected_tile.position = square
+                        players[turn].placed_tiles.append(selected_tile)
+                        players[turn].tiles.remove(selected_tile)
                 elif len(players[turn].moved_tiles) > 0:
                     players[turn].moved_tiles.remove(selected_tile_index)
 
             selected_tile = None
+
+            complete_turn_button_clicked = False
 
         if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
             tiles = board.get_tile_positions(dimensions, turn)
@@ -101,6 +114,18 @@ def main():
             if selected_tile is not None:
                 side_length = dimensions.side_length / 15
                 selected_tile.draw_tile(Rectangle(mouse_point.x - side_length / 2, mouse_point.y - side_length / 2, side_length, side_length), side_length)
+
+            if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
+                complete_turn_button_clicked = True
+                for tile in players[turn].placed_tiles:
+                    board.tiles.append(tile)
+                
+                players[turn].placed_tiles.clear()
+                players[turn].moved_tiles.clear()
+                players[turn].get_tiles(tile_bag)
+                print(len(players[turn].tiles))
+
+                turn = (turn + 1) % 2
 
         end_drawing()
 

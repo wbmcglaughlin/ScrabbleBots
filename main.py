@@ -1,4 +1,5 @@
 import os
+from typing import Union
 
 os.environ["RAYLIB_BIN_PATH"] = "__file__"
 
@@ -64,11 +65,12 @@ def main():
     set_target_fps(120)
 
     turn = 0
-    selected_tile: Scrabble.Tile = None
+    selected_tile: Union[Scrabble.Tile, None] = None
 
     # Complete Turn Button
     complete_turn_button_rect = Rectangle(10, height - 10 - 30, 30, 30)
     complete_turn_button_clicked = False
+    held_rack_position = None
 
     while not window_should_close():
         mouse_point = get_mouse_position()
@@ -79,6 +81,7 @@ def main():
         draw_fps(5, 5)
         board.draw_board(dimensions, render)
         board.draw_player_pieces(dimensions, players)
+        board.draw_legal_moves(players[turn])
 
         draw_rectangle_rec(complete_turn_button_rect, Color(63, 201, 24, 255))
         draw_text(f'turn: {turn}', 100, 10, 10, BLACK)
@@ -86,9 +89,15 @@ def main():
         if is_mouse_button_released(MOUSE_LEFT_BUTTON):
             for square_index, square in enumerate(board.board_squares):
                 if check_collision_point_rec(mouse_point, square):
-                    if selected_tile is not None:
-                        selected_tile.rack_position = None
-                        selected_tile.board_position = square_index
+                    legal_moves = board.get_legal_moves(players[turn])
+                    if legal_moves is not None:
+                        if square_index in legal_moves:
+                            if selected_tile is not None:
+                                selected_tile.rack_position = None
+                                selected_tile.board_position = square_index
+                        elif selected_tile is not None:
+                            selected_tile.rack_position = held_rack_position
+                            held_rack_position = None
 
             selected_tile = None
 
@@ -99,6 +108,7 @@ def main():
             for tile_index, tile in enumerate(tiles):
                 if check_collision_point_rec(mouse_point, tile):
                     selected_tile = players[turn].tiles[tile_index]
+                    held_rack_position = selected_tile.rack_position
                     selected_tile.rack_position = None
 
             if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:

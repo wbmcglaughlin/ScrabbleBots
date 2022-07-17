@@ -143,10 +143,50 @@ class Board():
         for tile in self.tiles:
             tile.draw_tile(self.board_squares[tile.board_position], dimensions.side_length / self.side_squares)
 
-    # TODO: get legal moves function
-    # def get_legal_moves(self, player: Player):
-    #     if self.tiles is None:
+    def draw_legal_moves(self, player: Player):
+        valid_moves = self.get_legal_moves(player)
+        square_recs = self.board_squares
 
+        for move in valid_moves:
+            draw_circle(square_recs[move].x + square_recs[move].width / 2, square_recs[move].y + square_recs[move].height / 2, 5, DARKGREEN)
+
+    # TODO: get legal moves function
+    def get_legal_moves(self, player: Player) -> list[int]:
+        valid_moves = []
+        if len(self.tiles) + len([tile for tile in player.tiles if tile.board_position is not None]) == 0:
+            return [int((self.side_squares * self.side_squares - 1) / 2)]
+        elif len([tile for tile in player.tiles if tile.board_position is not None]) == 0:
+            for tile in self.tiles:
+                valid_moves.append(tile.board_position - 1)
+                valid_moves.append(tile.board_position + 1)
+                valid_moves.append(tile.board_position + self.side_squares)
+                valid_moves.append(tile.board_position - self.side_squares)
+
+            for tile in player.tiles:
+                if tile.board_position is not None:
+                    valid_moves.append(tile.board_position - 1)
+                    valid_moves.append(tile.board_position + 1)
+                    valid_moves.append(tile.board_position + self.side_squares)
+                    valid_moves.append(tile.board_position - self.side_squares)
+        else:
+            for tile in player.tiles:
+                if tile.board_position is not None:
+                    valid_moves.append(tile.board_position - 1)
+                    valid_moves.append(tile.board_position + 1)
+                    valid_moves.append(tile.board_position + self.side_squares)
+                    valid_moves.append(tile.board_position - self.side_squares)
+
+        taken_squares = []
+        for tile in player.tiles:
+            if tile.board_position is not None:
+                taken_squares.append(tile.board_position)
+
+        for tile in self.tiles:
+            taken_squares.append(tile.board_position)
+
+        valid_moves = [v for v in valid_moves if v not in taken_squares]
+
+        return valid_moves
 
     def draw_player_pieces(self, dimensions: Dimensions, players: list[Player]):
         for player_num, player in enumerate(players):

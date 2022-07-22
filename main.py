@@ -19,8 +19,10 @@ def main():
     width = 600
     height = 800
 
+    # Need to find dominant width
     board_side_dim = height if (width > height) else width
 
+    # Dimensions Class Init
     border = 20
     spacing = (height - board_side_dim) / 2
     dimensions = Graphics.Dimensions(board_side_dim - 2 * border, border, int(border + spacing))
@@ -31,7 +33,7 @@ def main():
     square_colors: list[Color] = [RED, Color(255, 200, 2347, 255), BLUE, GRAY]
     render: Graphics.Render = Graphics.Render(border_thickness, border_color, square_colors)
 
-    # Scrabble board
+    # Scrabble board special tiles
     side_squares = 15
     triple_words = [0, 7, 14, 105, 119,
                     210, 217, 224]
@@ -48,89 +50,127 @@ def main():
                       122, 108, 92, 96, 98,
                       126, 128]
 
+    # Generating Tile Bag
     tile_bag = Scrabble.TileBag()
 
+    # Generating Scrabble Board
     board = Scrabble.Board(side_squares, triple_words, double_words, triple_letters, double_letters)
 
+    # Creating players
     player_one = Scrabble.Player()
     player_two = Scrabble.Player()
 
+    turn = 0
     players = [player_one, player_two]
 
     for player in players:
         player.get_tiles(tile_bag)
 
+    # Creating window
     init_window(width, height, "Scrabble Bots")
 
+    # Target FPS
     set_target_fps(120)
 
-    turn = 0
+    # Tile selected by player
     selected_tile: Union[Scrabble.Tile, None] = None
+    held_rack_position = None
 
     # Complete Turn Button
     complete_turn_button_rect = Rectangle(10, height - 10 - 30, 30, 30)
     complete_turn_button_clicked = False
-    held_rack_position = None
 
+    # Main Game Loop
     while not window_should_close():
+        # Player mouse position
         mouse_point = get_mouse_position()
 
+        # Begin Drawing and Clearing Background
         begin_drawing()
         clear_background(RAYWHITE)
 
-        draw_fps(5, 5)
-        board.draw_board(dimensions, render)
-        board.draw_player_pieces(dimensions, players)
-        board.draw_legal_moves(players[turn])
+        # Draw FPS onto Corner
+        # draw_fps(5, 5)
 
+        # Draw Board Aspects
+        board.draw_board(dimensions, render) # Draws background
+        board.draw_player_pieces(dimensions, players) # Draws rack pieces
+        board.draw_legal_moves(players[turn]) # Draw legal moves onto board
+
+        # Draw Complete Turn Button
         draw_rectangle_rec(complete_turn_button_rect, Color(63, 201, 24, 255))
-        draw_text(f'turn: {turn}', 100, 10, 10, BLACK)
 
+        # On Mouse Button Release
         if is_mouse_button_released(MOUSE_LEFT_BUTTON):
+            # Check if tile is on top of square
             for square_index, square in enumerate(board.board_squares):
                 if check_collision_point_rec(mouse_point, square):
-                    legal_moves = board.get_legal_moves(players[turn])
-                    if legal_moves is not None:
-                        if square_index in legal_moves:
+                    # Seeing if moves have been calculated
+                    if not board.has_moves:
+                        board.legal_moves = board.get_legal_moves(players[turn]) # If not, get moves
+
+                    # Checking if there are legal moves
+                    if board.legal_moves is not None:
+                        # Checking if square is a legal move
+                        if square_index in board.legal_moves:
+                            # If a tile has been selected TODO: is this the correct spot?
                             if selected_tile is not None:
                                 selected_tile.rack_position = None
                                 selected_tile.board_position = square_index
+                                board.has_moves = False
+                        # Return piece to board
                         elif selected_tile is not None:
                             selected_tile.rack_position = held_rack_position
                             held_rack_position = None
 
+            # Selected tile will always be None after release
             selected_tile = None
 
+            # TODO: move this somewhere else
             complete_turn_button_clicked = False
 
+        # If mouse button is pressed initially
         if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
             tiles = board.get_player_tile_rec(dimensions, turn)
             for tile_index, tile in enumerate(tiles):
-                if check_collision_point_rec(mouse_point, tile):
-                    selected_tile = players[turn].tiles[tile_index]
-                    held_rack_position = selected_tile.rack_position
-                    selected_tile.rack_position = None
+                # If the tile is not on the board
+                if players[turn].tiles[tile_index].board_position is None:
+                    # If the tile is under the click position
+                    if check_collision_point_rec(mouse_point, tile):
+                        # Hold the tile
+                        selected_tile = players[turn].tiles[tile_index]
+                        held_rack_position = selected_tile.rack_position
+                        selected_tile.rack_position = None
 
+            # Check if the complete turn button is pressed
             if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
                 complete_turn_button_clicked = True
                 for tile in players[turn].tiles:
+                    # Append all the tiles that are placed by a player onto the board tiles
                     if tile.board_position is not None:
                         board.tiles.append(tile)
+                        # Remove the tiles from the bag
                         players[turn].tiles.remove(tile)
 
+                # Fill the players tile bag
                 players[turn].get_tiles(tile_bag)
 
-                turn = (turn + 1) % 2
+                # Next Turn
+                turn = (turn + 1) % len(players)
 
+        # Check if the mouse is down still
         if is_mouse_button_down(MOUSE_LEFT_BUTTON):
+            # Draws tile under mouse position
             if selected_tile is not None:
                 side_length = dimensions.side_length / 15
                 selected_tile.draw_tile(
                     Rectangle(mouse_point.x - side_length / 2, mouse_point.y - side_length / 2, side_length,
                               side_length), side_length)
 
+        # End drawing
         end_drawing()
 
+    # Close window on exit
     close_window()
 
 

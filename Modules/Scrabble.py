@@ -1,5 +1,5 @@
 import random
-from typing import Union
+from typing import Union, List
 
 from raylibpy import *
 from Modules.Graphics import Dimensions, Render
@@ -39,6 +39,13 @@ class Tile:
         offset = (side_length - font_size) / 2
 
         draw_text(self.type, rec.x + offset, rec.y + offset, font_size, BLACK)
+        draw_text(str(self.board_position), rec.x + 1, rec.y + 1, int(font_size / 3), BLACK)
+        draw_text(str(self.rack_position), rec.x + 1, rec.y + side_length - int(font_size / 3) - 1, int(font_size / 3),
+                  BLACK)
+        draw_text(str(self.value), rec.x + side_length - int(font_size / 3) - 1,
+                  rec.y + side_length - int(font_size / 3) - 1,
+                  int(font_size / 3),
+                  BLACK)
 
 
 class TileBag:
@@ -108,19 +115,15 @@ class Player:
         if len(self.tiles) == tile_max:
             print("Tile Bag already full")
 
-        # Gets list of current tile positions, therefore we know what needs to be filled
-        # TODO: Implement better method
-        current_tile_positions: list[int] = []
-        for tile_position, tile in enumerate(self.tiles):
-            current_tile_positions.append(tile.rack_position)
+        for idx, tile in enumerate(self.tiles):
+            tile.rack_position = idx
+            tile.board_position = None
 
-        # Fills the players rack
-        for i in range(tile_max):
-            if i not in current_tile_positions:
-                tile = tile_bag.get_tile()
-                tile.board_position = None
-                tile.rack_position = i
-                self.tiles.append(tile)
+        for i in range(len(self.tiles), tile_max):
+            tile = tile_bag.get_tile()
+            tile.rack_position = i
+            tile.board_position = None
+            self.tiles.append(tile)
 
 
 class Board:
@@ -142,7 +145,7 @@ class Board:
         self.double_letters = double_letters
 
         self.board_squares: list[Rectangle] = []
-        self.tiles: list[Tile] = []
+        self.tiles: List[Tile] = []
 
         self.has_moves: bool = False
         self.legal_moves: list[int] = []
@@ -277,7 +280,28 @@ class Board:
             moves.append(pos - 1)
             return moves
 
+        def get_touching_pos(pos: int):
+            touching = []
+
+            for tile in self.tiles:
+                if tile.board_position is not None:
+                    if tile.board_position == pos + 1:
+                        touching.append(tile.board_position)
+                    elif tile.board_position == pos - 1:
+                        touching.append(tile.board_position)
+                    elif tile.board_position == pos - self.side_squares:
+                        touching.append(tile.board_position)
+                    elif tile.board_position == pos + self.side_squares:
+                        touching.append(tile.board_position)
+
+            return touching
+
         valid_moves = []
+
+        player_tiles_count = len([tile for tile in player.tiles if tile.board_position is not None])
+        board_tiles_count = len(self.tiles)
+
+        print(player_tiles_count, board_tiles_count)
 
         # If there is no tiles on the board
         if len(self.tiles) + len([tile for tile in player.tiles if tile.board_position is not None]) == 0:
@@ -289,25 +313,47 @@ class Board:
             for tile in self.tiles:
                 valid_moves = add_all(valid_moves, tile.board_position)
 
-            for tile in player.tiles:
-                if tile.board_position is not None:
-                    valid_moves = add_all(valid_moves, tile.board_position)
-
+        # FIXME: this does not work
         # If there is player tiles on the board
         else:
             player_tiles = [tile for tile in player.tiles if tile.board_position is not None]
+            player_tile_board_pos = [tile.board_position for tile in player.tiles if tile.board_position is not None]
+            board_tiles = [tile.board_position for tile in self.tiles if tile.board_position is not None]
 
-            if 2 > len(player_tiles) > 0:
+            # If there is no other board tiles
+            if board_tiles_count == 0 and player_tiles_count == 1:
                 for tile in player_tiles:
                     valid_moves = add_all(valid_moves, tile.board_position)
+            else:
+                if len(player_tiles) == 1:
+                    if player_tiles[0].board_position is not None:
+                        touching_list = get_touching_pos(player_tiles[0].board_position)
 
-            if len(player_tiles) > 1:
-                if (player_tiles[0].board_position - player_tiles[1].board_position) % self.side_squares == 0:
-                    for tile in player_tiles:
-                        valid_moves = add_up_down(valid_moves, tile.board_position)
+                        for touch in touching_list:
+                            valid_moves.append(touch + (touch - player_tiles[0].board_position))
+                            valid_moves.append(player_tiles[0].board_position - (touch - player_tiles[0].board_position))
                 else:
-                    for tile in player_tiles:
-                        valid_moves = add_left_right(valid_moves, tile.board_position)
+                    if (player_tiles[0].board_position - player_tiles[1].board_position) % self.side_squares == 0:
+                        current_pos = player_tiles[0].board_position
+                        while current_pos + self.side_squares in player_tile_board_pos or current_pos + self.side_squares in board_tiles:
+                            current_pos += self.side_squares
+                        valid_moves = add_up_down(valid_moves, current_pos)
+
+                        current_pos = player_tiles[0].board_position
+                        while current_pos - self.side_squares in player_tile_board_pos or current_pos - self.side_squares in board_tiles:
+                            current_pos -= self.side_squares
+                        valid_moves = add_up_down(valid_moves, current_pos)
+
+                    else:
+                        current_pos = player_tiles[0].board_position
+                        while current_pos + 1 in player_tile_board_pos or current_pos + 1 in board_tiles:
+                            current_pos += 1
+                        valid_moves = add_left_right(valid_moves, current_pos)
+
+                        current_pos = player_tiles[0].board_position
+                        while current_pos - 1 in player_tile_board_pos or current_pos - 1 in board_tiles:
+                            current_pos -= 1
+                        valid_moves = add_left_right(valid_moves, current_pos)
 
         # Removing illegal moves
         taken_squares = []

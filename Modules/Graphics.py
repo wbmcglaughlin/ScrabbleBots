@@ -1,3 +1,5 @@
+from typing import List
+
 from raylibpy import Color
 
 
@@ -11,7 +13,7 @@ class Dimensions:
 
 class Render:
     # Render Class Holding the boards color information
-    def __init__(self, border_thickness: int, border_color: Color, square_colors: list[Color]) -> None:
+    def __init__(self, border_thickness: int, border_color: Color, square_colors: List[Color]) -> None:
         self.border_thickness = border_thickness
         self.border_color = border_color
         self.square_colors = square_colors

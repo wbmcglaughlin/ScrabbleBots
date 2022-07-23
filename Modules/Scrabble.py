@@ -128,8 +128,8 @@ class Player:
 
 class Board:
     # Scrabble Board Class
-    def __init__(self, side_squares: int, triple_words: list[int], double_words: list[int], triple_letters: list[int],
-                 double_letters: list[int]) -> None:
+    def __init__(self, side_squares: int, triple_words: List[int], double_words: List[int], triple_letters: List[int],
+                 double_letters: List[int]) -> None:
         """
 
         :param side_squares: int
@@ -144,11 +144,11 @@ class Board:
         self.triple_letters = triple_letters
         self.double_letters = double_letters
 
-        self.board_squares: list[Rectangle] = []
+        self.board_squares: List[Rectangle] = []
         self.tiles: List[Tile] = []
 
         self.has_moves: bool = False
-        self.legal_moves: list[int] = []
+        self.legal_moves: List[int] = []
 
     def update_board_squares(self, dimensions: Dimensions):
         """
@@ -240,14 +240,14 @@ class Board:
                         5,
                         DARKGREEN)
 
-    def get_legal_moves(self, player: Player) -> list[int]:
+    def get_legal_moves(self, player: Player) -> List[int]:
         """
         Appends the legal scrabble moves into a list, does not check if the word is valid
 
         :param player: Player
         :return: list[int]
         """
-        def add_all(moves: list[int], pos: int):
+        def add_all(moves: List[int], pos: int):
             """
 
             :param moves: list[int]
@@ -258,7 +258,7 @@ class Board:
             moves = add_left_right(moves, pos)
             return moves
 
-        def add_up_down(moves: list[int], pos: int):
+        def add_up_down(moves: List[int], pos: int):
             """
 
             :param moves: list[int]
@@ -269,7 +269,7 @@ class Board:
             moves.append(pos - self.side_squares)
             return moves
 
-        def add_left_right(moves: list[int], pos: int):
+        def add_left_right(moves: List[int], pos: int):
             """
 
             :param moves: list[int]
@@ -371,7 +371,7 @@ class Board:
 
         return valid_moves
 
-    def draw_player_pieces(self, dimensions: Dimensions, players: list[Player]):
+    def draw_player_pieces(self, dimensions: Dimensions, players: List[Player]):
         """
 
         :param dimensions: Dimensions
@@ -389,7 +389,7 @@ class Board:
                     tile.draw_tile(self.board_squares[tile.board_position], dimensions.side_length / self.side_squares)
 
     @staticmethod
-    def get_player_tile_rec(dimensions: Dimensions, player_number) -> list[Rectangle]:
+    def get_player_tile_rec(dimensions: Dimensions, player_number) -> List[Rectangle]:
         """
         Gets the players tile positions in a convenience method
 

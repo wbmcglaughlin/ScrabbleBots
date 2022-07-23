@@ -1,10 +1,16 @@
 import os
-from typing import Union
+from typing import Union, List
 
 os.environ["RAYLIB_BIN_PATH"] = "__file__"
 
 from raylibpy import *
 from Modules import Graphics, Scrabble
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 
 def main():
@@ -13,7 +19,7 @@ def main():
     with open("./Resources/ScrabbleWords.txt", "r") as word_file:
         lines = word_file.readlines()
         for line in lines:
-            words.append(line.removesuffix('\n').lower())
+            words.append(remove_suffix(line, '\n').lower())
 
     # Dimensions for the board
     width = 800
@@ -30,7 +36,7 @@ def main():
     # Graphics
     border_thickness: int = 3
     border_color: Color = BLACK
-    square_colors: list[Color] = [RED, Color(255, 200, 2347, 255), BLUE, GRAY]
+    square_colors: List[Color] = [RED, Color(255, 200, 2347, 255), BLUE, GRAY]
     render: Graphics.Render = Graphics.Render(border_thickness, border_color, square_colors)
 
     # Scrabble board special tiles

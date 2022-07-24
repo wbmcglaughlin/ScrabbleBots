@@ -219,26 +219,22 @@ class Board:
         for tile in self.tiles:
             tile.draw_tile(self.board_squares[tile.board_position], dimensions.side_length / self.side_squares)
 
-    def draw_legal_moves(self, player: Player):
+    def draw_circles(self, circle_pos: List[int], color: Color):
         """
 
-        :param player: Player
+        :param color:
+        :param circle_pos:
         :return:
         """
-
-        # Checks if board has moves
-        if not self.has_moves:
-            self.legal_moves = self.get_legal_moves(player)
-
         # TODO: why this
         square_recs = self.board_squares
 
         # Draws a circle at each legal move
-        for move in self.legal_moves:
+        for move in circle_pos:
             draw_circle(square_recs[move].x + square_recs[move].width / 2,
                         square_recs[move].y + square_recs[move].height / 2,
                         5,
-                        DARKGREEN)
+                        color)
 
     def get_legal_moves(self, player: Player) -> List[int]:
         """
@@ -284,15 +280,14 @@ class Board:
             touching = []
 
             for tile in self.tiles:
-                if tile.board_position is not None:
-                    if tile.board_position == pos + 1:
-                        touching.append(tile.board_position)
-                    elif tile.board_position == pos - 1:
-                        touching.append(tile.board_position)
-                    elif tile.board_position == pos - self.side_squares:
-                        touching.append(tile.board_position)
-                    elif tile.board_position == pos + self.side_squares:
-                        touching.append(tile.board_position)
+                if tile.board_position == pos + 1:
+                    touching.append(tile.board_position)
+                elif tile.board_position == pos - 1:
+                    touching.append(tile.board_position)
+                elif tile.board_position == pos - self.side_squares:
+                    touching.append(tile.board_position)
+                elif tile.board_position == pos + self.side_squares:
+                    touching.append(tile.board_position)
 
             return touching
 
@@ -300,8 +295,6 @@ class Board:
 
         player_tiles_count = len([tile for tile in player.tiles if tile.board_position is not None])
         board_tiles_count = len(self.tiles)
-
-        print(player_tiles_count, board_tiles_count)
 
         # If there is no tiles on the board
         if len(self.tiles) + len([tile for tile in player.tiles if tile.board_position is not None]) == 0:
@@ -313,7 +306,6 @@ class Board:
             for tile in self.tiles:
                 valid_moves = add_all(valid_moves, tile.board_position)
 
-        # FIXME: this does not work
         # If there is player tiles on the board
         else:
             player_tiles = [tile for tile in player.tiles if tile.board_position is not None]
@@ -370,6 +362,25 @@ class Board:
         self.has_moves = True
 
         return valid_moves
+
+    def get_movable_tiles(self, player: Player):
+        if not self.has_moves:
+            self.legal_moves = self.get_legal_moves(player)
+
+        player_tiles = [tile.board_position for tile in player.tiles if tile.board_position is not None]
+        touching = []
+
+        for legal_move in self.legal_moves:
+            if legal_move + 1 in player_tiles:
+                touching.append(legal_move + 1)
+            elif legal_move - 1 in player_tiles:
+                touching.append(legal_move - 1)
+            elif legal_move - self.side_squares in player_tiles:
+                touching.append(legal_move - self.side_squares)
+            elif legal_move + self.side_squares in player_tiles:
+                touching.append(legal_move + self.side_squares)
+
+        return touching
 
     def draw_player_pieces(self, dimensions: Dimensions, players: List[Player]):
         """

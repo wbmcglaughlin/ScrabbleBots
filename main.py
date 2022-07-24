@@ -101,7 +101,12 @@ def main():
         # Draw Board Aspects
         board.draw_board(dimensions, render)  # Draws background
         board.draw_player_pieces(dimensions, players)  # Draws rack pieces
-        board.draw_legal_moves(players[turn])  # Draw legal moves onto board
+        if not board.has_moves:
+            board.legal_moves = board.get_legal_moves(players[turn])
+
+        board.draw_circles(board.legal_moves, DARKGREEN)  # Draw legal moves onto board
+
+        board.draw_circles(board.get_movable_tiles(players[turn]), RED)
 
         # Draw Complete Turn Button
         draw_rectangle_rec(complete_turn_button_rect, Color(63, 201, 24, 255))

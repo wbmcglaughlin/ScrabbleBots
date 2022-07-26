@@ -102,7 +102,7 @@ class Player:
     def __init__(self) -> None:
         self.held_piece = -1
         self.score = 0
-        self.tiles: list[Tile] = []
+        self.tiles: List[Tile] = []
 
     def get_tiles(self, tile_bag: TileBag):
         """
@@ -124,6 +124,9 @@ class Player:
             tile.rack_position = i
             tile.board_position = None
             self.tiles.append(tile)
+
+    def get_filled_rack_pos(self):
+        return [tile.rack_position for tile in self.tiles if tile.rack_position is not None]
 
 
 class Board:
@@ -149,6 +152,9 @@ class Board:
 
         self.has_moves: bool = False
         self.legal_moves: List[int] = []
+
+        self.has_movable_tiles: bool = False
+        self.movable_tiles: List[int] = []
 
     def update_board_squares(self, dimensions: Dimensions):
         """
@@ -282,11 +288,11 @@ class Board:
             for tile in self.tiles:
                 if tile.board_position == pos + 1:
                     touching.append(tile.board_position)
-                elif tile.board_position == pos - 1:
+                if tile.board_position == pos - 1:
                     touching.append(tile.board_position)
-                elif tile.board_position == pos - self.side_squares:
+                if tile.board_position == pos - self.side_squares:
                     touching.append(tile.board_position)
-                elif tile.board_position == pos + self.side_squares:
+                if tile.board_position == pos + self.side_squares:
                     touching.append(tile.board_position)
 
             return touching
@@ -373,14 +379,90 @@ class Board:
         for legal_move in self.legal_moves:
             if legal_move + 1 in player_tiles:
                 touching.append(legal_move + 1)
-            elif legal_move - 1 in player_tiles:
+            if legal_move - 1 in player_tiles:
                 touching.append(legal_move - 1)
-            elif legal_move - self.side_squares in player_tiles:
+            if legal_move - self.side_squares in player_tiles:
                 touching.append(legal_move - self.side_squares)
-            elif legal_move + self.side_squares in player_tiles:
+            if legal_move + self.side_squares in player_tiles:
                 touching.append(legal_move + self.side_squares)
 
         return touching
+
+    def get_current_word(self, player: Player):
+        player_tile_pos = [tile.board_position for tile in player.tiles if tile.board_position is not None]
+        player_tile_let = [tile.type for tile in player.tiles if tile.board_position is not None]
+
+        board_tile_pos = [tile.board_position for tile in self.tiles if tile.board_position is not None]
+        board_tile_val = [tile.type for tile in self.tiles if tile.board_position is not None]
+
+        tile_pos = player_tile_pos + board_tile_pos
+        tile_val = player_tile_let + board_tile_val
+
+        word_rows = []
+        word_cols = []
+
+        for pos in player_tile_pos:
+            if pos + 1 in board_tile_pos:
+                word_rows.append(int(pos / self.side_squares))
+            if pos - 1 in board_tile_pos:
+                word_rows.append(int(pos / self.side_squares))
+            if pos + self.side_squares in board_tile_pos:
+                word_cols.append(pos % self.side_squares)
+            if pos - self.side_squares in board_tile_pos:
+                word_cols.append(pos % self.side_squares)
+
+        word_rows = set(word_rows)
+        word_cols = set(word_cols)
+
+        words = []
+
+        for row in word_rows:
+            word = []
+
+            pivot = None
+            for pos in player_tile_pos:
+                if int(pos / self.side_squares) == row:
+                    pivot = pos
+                    break
+
+            word.append(player_tile_let[player_tile_pos.index(pivot)])
+            if pivot is not None:
+                current = pivot + 1
+                while current in tile_pos:
+                    word.append(tile_val[tile_pos.index(current)])
+                    current += 1
+
+                current = pivot - 1
+                while current in tile_pos:
+                    word.append(tile_val[tile_pos.index(current)])
+                    current -= 1
+
+            words.append(word)
+
+        for col in word_cols:
+            word = []
+
+            pivot = None
+            for pos in player_tile_pos:
+                if int(pos % self.side_squares) == col:
+                    pivot = pos
+                    break
+
+            word.append(player_tile_let[player_tile_pos.index(pivot)])
+            if pivot is not None:
+                current = pivot + self.side_squares
+                while current in tile_pos:
+                    word.append(tile_val[tile_pos.index(current)])
+                    current += self.side_squares
+
+                current = pivot - self.side_squares
+                while current in tile_pos:
+                    word.append(tile_val[tile_pos.index(current)])
+                    current -= self.side_squares
+
+            words.append(word)
+
+        print(words, word_rows, word_cols)
 
     def draw_player_pieces(self, dimensions: Dimensions, players: List[Player]):
         """

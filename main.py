@@ -101,12 +101,16 @@ def main():
         # Draw Board Aspects
         board.draw_board(dimensions, render)  # Draws background
         board.draw_player_pieces(dimensions, players)  # Draws rack pieces
+
         if not board.has_moves:
             board.legal_moves = board.get_legal_moves(players[turn])
 
         board.draw_circles(board.legal_moves, DARKGREEN)  # Draw legal moves onto board
 
-        board.draw_circles(board.get_movable_tiles(players[turn]), RED)
+        if not board.has_movable_tiles:
+            board.movable_tiles = board.get_movable_tiles(players[turn])
+
+        board.draw_circles(board.movable_tiles, RED)
 
         # Draw Complete Turn Button
         draw_rectangle_rec(complete_turn_button_rect, Color(63, 201, 24, 255))
@@ -125,11 +129,10 @@ def main():
                         if board.legal_moves is not None:
                             # Checking if square is a legal move
                             if square_index in board.legal_moves:
-                                # If a tile has been selected
                                 players[turn].tiles[selected_tile].rack_position = None
                                 players[turn].tiles[selected_tile].board_position = square_index
                                 selected_tile = None
-                                board.has_moves = False
+                                board.get_current_word(players[turn])
 
             if selected_tile is not None:
                 players[turn].tiles[selected_tile].rack_position = held_rack_position
@@ -138,15 +141,15 @@ def main():
                 # Selected tile will always be None after release
                 selected_tile = None
 
-            # TODO: move this somewhere else
             complete_turn_button_clicked = False
+
+            board.has_moves = False
+            board.movable_tiles = False
 
         # If mouse button is pressed initially
         if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
             # Check if the complete turn button is pressed
             if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
-                complete_turn_button_clicked = True
-
                 for player_tile in reversed(players[turn].tiles):
                     # Append all the tiles that are placed by a player onto the board tiles
                     if player_tile.board_position is not None:
@@ -156,6 +159,8 @@ def main():
 
                 for tile in board.tiles:
                     tile.rack_position = None
+
+                complete_turn_button_clicked = True
 
                 # Fill the players tile bag
                 players[turn].get_tiles(tile_bag)
@@ -167,6 +172,7 @@ def main():
                 board.has_moves = True
             else:
                 tiles = board.get_player_tile_rec(dimensions, turn)
+
                 for tile_index, tile in enumerate(players[turn].tiles):
                     # If the tile is not on the board
                     if tile.board_position is None:
@@ -176,6 +182,12 @@ def main():
                             selected_tile = tile_index
                             held_rack_position = players[turn].tiles[selected_tile].rack_position
                             players[turn].tiles[selected_tile].rack_position = None
+                    elif tile.board_position is not None:
+                        if check_collision_point_rec(mouse_point, board.board_squares[tile.board_position]):
+                            selected_tile = tile_index
+                            empty_rack_pos = [i for i in range(7) if i not in players[turn].get_filled_rack_pos()]
+                            held_rack_position = empty_rack_pos[0]
+                            players[turn].tiles[selected_tile].board_position = None
 
         # Check if the mouse is down still
         if is_mouse_button_down(MOUSE_LEFT_BUTTON):

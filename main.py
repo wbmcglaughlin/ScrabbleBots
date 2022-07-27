@@ -132,7 +132,7 @@ def main():
                                 players[turn].tiles[selected_tile].rack_position = None
                                 players[turn].tiles[selected_tile].board_position = square_index
                                 selected_tile = None
-                                print(board.get_current_words(players[turn]))
+                                board.current_words = board.get_current_words(players[turn])
 
             if selected_tile is not None:
                 players[turn].tiles[selected_tile].rack_position = held_rack_position
@@ -150,26 +150,32 @@ def main():
         if is_mouse_button_pressed(MOUSE_LEFT_BUTTON):
             # Check if the complete turn button is pressed
             if check_collision_point_rec(mouse_point, complete_turn_button_rect) and not complete_turn_button_clicked:
-                for player_tile in reversed(players[turn].tiles):
-                    # Append all the tiles that are placed by a player onto the board tiles
-                    if player_tile.board_position is not None:
-                        # Remove the tiles from the bag
-                        players[turn].tiles.remove(player_tile)
-                        board.tiles.append(player_tile)
+                valid_words = True
+                for word in board.current_words:
+                    if word not in words:
+                        valid_words = False
 
-                for tile in board.tiles:
-                    tile.rack_position = None
+                if valid_words:
+                    for player_tile in reversed(players[turn].tiles):
+                        # Append all the tiles that are placed by a player onto the board tiles
+                        if player_tile.board_position is not None:
+                            # Remove the tiles from the bag
+                            players[turn].tiles.remove(player_tile)
+                            board.tiles.append(player_tile)
 
-                complete_turn_button_clicked = True
+                    for tile in board.tiles:
+                        tile.rack_position = None
 
-                # Fill the players tile bag
-                players[turn].get_tiles(tile_bag)
+                    complete_turn_button_clicked = True
 
-                # Next Turn
-                turn = (turn + 1) % len(players)
+                    # Fill the players tile bag
+                    players[turn].get_tiles(tile_bag)
 
-                board.legal_moves = board.get_legal_moves(players[turn])
-                board.has_moves = True
+                    # Next Turn
+                    turn = (turn + 1) % len(players)
+
+                    board.legal_moves = board.get_legal_moves(players[turn])
+                    board.has_moves = True
             else:
                 tiles = board.get_player_tile_rec(dimensions, turn)
 

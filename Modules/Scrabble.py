@@ -156,6 +156,8 @@ class Board:
         self.has_movable_tiles: bool = False
         self.movable_tiles: List[int] = []
 
+        self.current_words: List[str] = []
+
     def update_board_squares(self, dimensions: Dimensions):
         """
         Board squares containing information about board positions, would

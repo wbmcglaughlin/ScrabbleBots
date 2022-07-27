@@ -132,7 +132,7 @@ def main():
                                 players[turn].tiles[selected_tile].rack_position = None
                                 players[turn].tiles[selected_tile].board_position = square_index
                                 selected_tile = None
-                                board.get_current_word(players[turn])
+                                print(board.get_current_words(players[turn]))
 
             if selected_tile is not None:
                 players[turn].tiles[selected_tile].rack_position = held_rack_position
